@@ -1,0 +1,192 @@
+.transition (@property, @duration, @function: ease, @delay: 0s) {
+    -webkit-transition: @arguments;
+    -moz-transition: @arguments;
+    -o-transition: @arguments;
+    -ms-transition: @arguments;
+    transition: @arguments;
+}
+
+.fill-parent {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+button {
+  position: relative;
+  border: none;
+  background: white;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .5);
+  border-radius: 5px;
+  padding: .25em .5em;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 1px black;
+  background: fade(orangered, 90%);
+  border-bottom: 5px solid fade(black, 20%);
+  .transition(all, .1s);
+
+  &:active {
+    top: 5px;
+    border-bottom-width: 0;
+    box-shadow:
+      0 0px 2px rgba(0, 0, 0, .5),
+      0 0 10px fade(orangered, 30%) inset;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+//.dancer { width: 160; height: 120; }
+#dances {
+  .dancer {
+    display: block;
+    float: left;
+  }
+}
+
+#photobooth {
+  @padding: 25px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  margin: auto;
+  width: 320px;
+  height: 370px;
+  padding: @padding;
+  background: white;
+  border-radius: 10px;
+  box-shadow:
+    0 0 25px black,
+    0 0 300px 100px fade(orangered, 50%);
+  text-align: center;
+  z-index: 5;
+  display: none;
+  white-space: nowrap;
+
+  &.active {
+    display: block;
+  }
+
+  h1 {
+    margin: 0;
+    margin-bottom: @padding;
+    font-size: 1.75em;
+    letter-spacing: -.05em;
+  }
+
+  button {
+    display: none;
+    margin: @padding 10px;
+    font-size: 1.5em;
+  }
+
+  #preview {
+    position: relative;
+    width: 320px;
+    height: 240px;
+    background: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+
+    &:after {
+      content: '';
+      .fill-parent;
+      box-shadow: 0 0 40px rgba(0, 0, 0, .3) inset;
+      z-index: 10;
+    }
+
+    .gif {
+      .fill-parent;
+      opacity: 0;
+    }
+  }
+
+  button#hide-booth {
+    background: gray;
+  }
+
+  &.state-no-camera {
+    button#start-camera, button#hide-booth {
+      display: inline-block;
+    }
+
+    #preview:before {
+      content: '';
+      .fill-parent;
+      background: url(static.gif);
+      opacity: .25;
+    }
+  }
+
+  button#record {
+    .transition(all, .25s);
+  }
+
+  &.state-camera-ready {
+    button#record {
+      display: inline-block;
+      width: auto !important;
+    }
+  }
+
+  &.state-recording, &.state-processing {
+    button#record {
+      display: inline-block;
+      text-indent: -9999px;
+      position: relative;
+      width: 0%;
+      height: 10px;
+      margin: 0;
+      margin-top: 30px;
+    }
+  }
+
+  &.state-recording {
+    button#record {
+      display: inline-block;
+      background: lightgreen;
+    }
+  }
+
+  &.state-processing {
+    button#record {
+      display: inline-block;
+      background: lightgreen;
+    }
+  }
+
+  button#redo-gif {
+    background: gray;
+  }
+
+  button#upload-gif {
+    background: green;
+  }
+
+  &.state-gif-ready {
+    box-shadow:
+      0 0 25px black,
+      0 0 300px 100px fade(lightgreen, 50%);
+
+    #preview .gif {
+      opacity: 1;
+    }
+
+    button#upload-gif, button#redo-gif {
+      display: inline-block
+    }
+  }
+}

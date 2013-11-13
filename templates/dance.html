@@ -1,0 +1,36 @@
+<html>
+<head>
+
+<link rel="stylesheet/less" type="text/css" href="static/dance.less" />
+<script>
+  less = {env: 'development', poll:500}
+</script>
+<script src="static/lib/less-1.4.2.js"></script>
+<script src="static/lib/jquery-2.0.3.min.js"></script>
+<script src="static/lib/gif.js"></script>
+<script src="static/lib/camera.js"></script>
+<script src="static/danceparty.js"></script>
+
+</head>
+<body>
+
+<div id="dances">
+  {% for dance in dances %}
+    <img class="dancer" src="dance/{{ dance }}" title="">
+  {% endfor %}
+</div>
+
+<div id="photobooth">
+  <h1>show me your moves!</h1>
+  <div id="preview">
+    <img class="gif">
+  </div>
+  <button id="hide-booth">no.</button>
+  <button id="start-camera">start the camera!</button>
+  <button id="record">let's dance!</button>
+  <button id="redo-gif">redo</button>
+  <button id="upload-gif">upload</button>
+</div>
+
+</body>
+</html>
