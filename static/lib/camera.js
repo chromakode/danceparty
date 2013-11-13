@@ -4,11 +4,13 @@
 
 	Author: Andrei Gheorghe (http://idevelop.github.com)
 	License: MIT
+
+	chromakode: added media stream stopping
 */
 
 var camera = (function() {
 	var options;
-	var video, canvas, context;
+	var video, canvas, context, stream;
 	var renderTimer;
 
 	function initVideoStream() {
@@ -22,7 +24,8 @@ var camera = (function() {
 		if (navigator.getUserMedia) {
 			navigator.getUserMedia({
 				video: true
-			}, function(stream) {
+			}, function(s) {
+				stream = s
 				options.onSuccess();
 
 				if (video.mozSrcObject !== undefined) { // hack for Firefox < 19
@@ -75,6 +78,8 @@ var camera = (function() {
 		} else {
 			video.src = "";
 		}
+
+		stream.stop()
 	}
 
 	function pauseCapture() {
