@@ -5,12 +5,9 @@ import random
 import uuid
 
 from PIL import Image
-from flask import Flask, request, render_template, send_from_directory
+from flask import request, render_template, send_from_directory
 
-
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # MB
+from danceparty import app
 
 
 def check_gif(data):
@@ -44,9 +41,3 @@ def upload_dance():
         with open(os.path.join(app.config['UPLOAD_FOLDER'], name), 'w') as out:
             out.write(gif_data)
         return 'sweet moves!'
-
-
-if __name__ == '__main__':
-    # Chrome with dev tools open deadlocks if threaded=True is not set.
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-    app.run(host='0.0.0.0', debug=True, threaded=True)

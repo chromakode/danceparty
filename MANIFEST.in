@@ -1,0 +1,2 @@
+recursive-include danceparty/static *
+recursive-include danceparty/templates *
