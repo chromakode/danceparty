@@ -14,7 +14,7 @@ def check_gif(data):
     img_stream = cStringIO.StringIO(data)
     try:
         img = Image.open(img_stream)
-        return img.format =='GIF'
+        return img.format == 'GIF'
     except IOError:
         return False
 
