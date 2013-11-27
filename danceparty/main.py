@@ -37,11 +37,30 @@ if not app.debug:
 
 def check_gif(data):
     img_stream = cStringIO.StringIO(data)
+
     try:
         img = Image.open(img_stream)
-        return img.format == 'GIF'
+        if img.format != 'GIF':
+            return False
     except IOError:
         return False
+
+    # Loop through frames adding up delays until we run out of frames or exceed
+    # 1 second.
+    duration = img.info['duration']
+    try:
+        # Go through frames summing the durations until we run out of ms in the
+        # second limit. (or, an extra frame)
+        while duration <= 1050:
+            img.seek(img.tell() + 1)
+            duration += img.info['duration']
+
+        # If we leave the while loop without an error, we exceeded the time bound.
+        return False
+
+    # We reached the last frame without exceeding the while loops ms time bound.
+    except EOFError:
+        return True
 
 
 def dance_owner_token(dance_id):
