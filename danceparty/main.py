@@ -12,12 +12,27 @@ from danceparty import app
 
 def check_gif(data):
     img_stream = cStringIO.StringIO(data)
+    # Confirm it is a GIF first.
     try:
         img = Image.open(img_stream)
-        return img.format =='GIF'
+        if img.format !='GIF':
+            return False
     except IOError:
         return False
-
+    #Loop through its frames adding up delays untill we run out of frames or exceed 1 second.
+    #Note that PIL uses seek and tell for frames. I have no idea why.
+    #It would be nice to iterate over them, but it seems there is just an exception at the end.
+    duration = img.info['duration']
+    try:
+        #Go through frames summing the durations untill we run out of ms in the second limit. (or, an extra frame)
+        while duration <= 1050:
+            img.seek(img.tell()+1)
+            duration += img.info['duration']
+        #If we leave the while loop without an error, we exceeded the time bound.
+        return False
+    #We reached the last frame without exceeding the while loops ms time bound.
+    except EOFError:
+        return True
 
 @app.route('/')
 def dances_plz():
