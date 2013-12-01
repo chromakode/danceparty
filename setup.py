@@ -15,6 +15,8 @@ setup(name='danceparty',
     packages=find_packages(),
     install_requires=[
         'Flask',
+        'CouchDB',
+        'py-bcrypt',
     ],
     include_package_data=True,
     zip_safe=False,

@@ -1,23 +1,16 @@
 <html>
 <head>
 
-<link rel="stylesheet/less" type="text/css" href="static/dance.less" />
+<link rel="stylesheet/less" type="text/css" href="/static/dance.less" />
 <script>
-  less = {env: 'development', poll:500}
+  less = {env: 'development', poll: 3000}
 </script>
-<script src="static/lib/less-1.4.2.js"></script>
-<script src="static/lib/jquery-2.0.3.min.js"></script>
-<script src="static/lib/gif.js"></script>
-<script src="static/lib/camera.js"></script>
-<script src="static/danceparty.js"></script>
+<script src="/static/lib/less-1.4.2.js"></script>
 
 </head>
 <body>
 
 <div id="dances">
-  {% for dance in dances %}
-    <img class="dancer" src="dance/{{ dance }}" title="">
-  {% endfor %}
 </div>
 
 <div id="photobooth">
@@ -31,6 +24,17 @@
   <button id="redo-gif">redo</button>
   <button id="upload-gif">upload</button>
 </div>
+
+<script src="/static/lib/jquery-2.0.3.min.js"></script>
+<script src="/static/lib/underscore-1.4.4.js"></script>
+<script src="/static/lib/backbone-1.0.0.js"></script>
+<script src="/static/lib/gif.js"></script>
+<script src="/static/lib/camera.js"></script>
+<script src="/static/danceparty.js"></script>
+<script>
+  dances.reset({{ dances_json|tojson }})
+  config = {{ config|tojson }}
+</script>
 
 </body>
 </html>
