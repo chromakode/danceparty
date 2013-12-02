@@ -164,7 +164,7 @@ DanceCollection = Backbone.Collection.extend({
 
 DanceItem = Backbone.View.extend({
   className: 'dance',
-  template: _.template('<img src="<%- img_url %>">'),
+  template: _.template('<img class="gif" src="<%- img_url %>">'),
   render: function() {
     this.$el.html(this.template({
       img_url: this.model.get('url')
@@ -174,7 +174,7 @@ DanceItem = Backbone.View.extend({
 })
 
 DanceReviewItem = DanceItem.extend({
-  template: _.template('<img src="<%- img_url %>"><div class="actions"><button class="approve">splendid!</button><button class="reject">unacceptable</button></div>'),
+  template: _.template('<img class="gif" src="<%- img_url %>"><div class="actions"><button class="approve">splendid!</button><button class="reject">unacceptable</button></div>'),
   events: {
     'click .approve': 'approve',
     'click .reject': 'reject'
@@ -202,11 +202,15 @@ DanceReviewItem = DanceItem.extend({
 })
 
 DanceGrid = Backbone.View.extend({
+  gridCSSTemplate: _.template('#dances .dance { width:<%- width %>px; height:<%- height %>px; }'),
+
   initialize: function() {
+    $(window).on('resize', _.bind(this.scaleGrid, this))
     this.listenTo(this.collection, 'add', this.addDance)
   },
 
   render: function() {
+    this.scaleGrid()
     this.collection.each(this.addDance, this)
   },
 
@@ -214,6 +218,16 @@ DanceGrid = Backbone.View.extend({
       var viewType = config.mode == 'review' ? DanceReviewItem : DanceItem
       var view = new viewType({model: dance})
       this.$el.append(view.render().$el)
+  },
+
+  scaleGrid: function() {
+    var gridWidth = $(window).width()
+    var width = gridWidth / Math.max(1, Math.round(gridWidth / 320))
+    this.$el.css('width', gridWidth)
+    this.$('#grid-style').html(this.gridCSSTemplate({
+      width: Math.floor(width),
+      height: Math.floor(width * (240 / 320))
+    }))
   }
 })
 
