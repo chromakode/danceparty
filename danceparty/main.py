@@ -59,7 +59,7 @@ def connect_db():
         },
     }
     doc = g.db.get(views['_id'], {})
-    if doc['views'] != views['views']:
+    if doc.get('views') != views['views']:
         doc.update(views)
         g.db.save(doc)
 
