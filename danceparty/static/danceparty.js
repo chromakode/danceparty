@@ -187,8 +187,7 @@ DanceReviewItem = DanceItem.extend({
   render: function() {
     DanceItem.prototype.render.apply(this)
     var danceStatus = this.model.get('status')
-    this.$el.toggleClass('rejected', danceStatus == 'rejected')
-    this.$el.toggleClass('approved', danceStatus == 'approved')
+    this.$el.attr('data-status', danceStatus)
     return this
   },
 

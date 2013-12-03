@@ -80,20 +80,22 @@ button {
       }
     }
 
-    &.rejected {
-      background: red;
-
+    &[data-status]:not([data-status=new]) {
       img {
         opacity: .75;
       }
     }
 
-    &.approved {
-      background: green;
+    &[data-status=rejected] {
+      background: red;
+    }
 
-      img {
-        opacity: .75;
-      }
+    &[data-status=approved] {
+      background: green;
+    }
+
+    &[data-status=deleted] {
+      background: yellow;
     }
   }
 }
