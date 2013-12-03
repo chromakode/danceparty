@@ -1,6 +1,7 @@
 import binascii
 import cStringIO
 import hashlib
+import logging
 import os
 import random
 import time
@@ -25,6 +26,12 @@ from flask import (
 from werkzeug.security import safe_str_cmp
 
 from danceparty import app
+
+
+if not app.debug:
+    file_handler = logging.FileHandler(app.config['LOG_FILE'])
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
 
 
 def check_gif(data):
