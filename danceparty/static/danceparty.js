@@ -398,6 +398,7 @@ $(function() {
       setTimeout(function() {
         if (!window.rg_user_data) {
           booth.setState('rg-verify-fail')
+          window.ga && ga('send', 'event', 'rg', 'timeout');
         }
       }, 5000)
     } else {
@@ -420,9 +421,10 @@ $(window).on('message', function(ev) {
     if (name == 'rg_verify') {
       rg_user_data = data
       if (rg_user_data.uid == false) {
-        booth.setState('rg-verify-fail')
+        window.ga && ga('send', 'event', 'rg', 'fail');
       } else {
         booth.setState('no-camera')
+        window.ga && ga('send', 'event', 'rg', 'success');
       }
     }
 })
