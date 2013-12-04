@@ -233,11 +233,15 @@ DanceItem = Backbone.View.extend({
   template: _.template('<img class="gif">'),
   render: function() {
     this.$el.html(this.template())
+    if (this.loaded) {
+      this.$('.gif').attr('src', this.model.get('url'))
+    }
     return this
   },
 
   loadImage: function() {
-    this.$('.gif').attr('src', this.model.get('url'))
+    this.loaded = true
+    this.render()
   }
 })
 
@@ -296,12 +300,20 @@ DanceGrid = Backbone.View.extend({
   gridCSSTemplate: _.template('#dances .dance { width:<%- width %>px; height:<%- height %>px; }'),
 
   initialize: function(options) {
-    $(window).on('resize', _.bind(this.scaleGrid, this))
     this.collections = options.collections
     _.each(this.collections, function(collection) {
       this.listenTo(collection, 'add', this.addDance)
     }, this)
     this.lazyViews = []
+
+    $(window).on('resize', _.bind(function() {
+      this.scaleGrid()
+      this.loadViews()
+    }, this))
+
+    $(window).on('scroll', _.bind(function() {
+      this.loadViews()
+    }, this))
   },
 
   render: function() {
@@ -309,6 +321,7 @@ DanceGrid = Backbone.View.extend({
       collection.each(this.addDance, this)
     }, this)
     this.scaleGrid()
+    this.loadViews()
     return this
   },
 
@@ -344,11 +357,13 @@ DanceGrid = Backbone.View.extend({
       width: Math.floor(width),
       height: Math.floor(width * (240 / 320))
     }))
+  },
 
+  loadViews: function() {
     this.lazyViews = _.reject(this.lazyViews, function(view) {
       var offset = view.$el.offset()
-      var winHeight = $(window).height()
-      if (offset.top < winHeight) {
+      var threshold = $(window).height() + $(window).scrollTop()
+      if (offset.top < threshold) {
         view.loadImage()
         return true
       }
@@ -373,6 +388,7 @@ $(function() {
 
   var collections = [dances]
   if (config.mode == 'party') {
+    $('body').addClass('party')
     booth.init()
     booth.show()
     if ($('#rg-verify').length) {
