@@ -10,6 +10,10 @@ booth = {
       this.hide()
     }, this))
 
+    $('#rg-retry').on('click', function() {
+      location.reload()
+    })
+
     $('#start-camera').on('click', function() {
       recorder.init()
     })
@@ -128,6 +132,11 @@ recorder = {
 
     var formData = new FormData()
     formData.append('moves', this.blob)
+
+    if (window.rg_user_data) {
+      formData.append('user_id', rg_user_data.uid)
+      formData.append('user_token', rg_user_data.token)
+    }
 
     Backbone.ajax({
         url: '/dance',
@@ -351,7 +360,11 @@ $(function() {
   if (config.mode == 'party') {
     booth.init()
     booth.show()
-    booth.setState('no-camera')
+    if ($('#rg-verify').length) {
+      booth.setState('rg-verify')
+    } else {
+      booth.setState('no-camera')
+    }
     collections.push(mydances)
   }
 
@@ -359,4 +372,19 @@ $(function() {
     el: $('#dances'),
     collections: collections
   }).render()
+})
+
+$(window).on('message', function(ev) {
+    ev = ev.originalEvent
+    var msg = ev.data.split(':')
+    var name = msg.shift()
+    var data = JSON.parse(msg.join(':'))
+    if (name == 'rg_verify') {
+      rg_user_data = data
+      if (rg_user_data.uid == false) {
+        booth.setState('rg-verify-fail')
+      } else {
+        booth.setState('no-camera')
+      }
+    }
 })

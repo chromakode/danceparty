@@ -143,6 +143,17 @@ button {
     font-size: 1.5em;
   }
 
+  .msg {
+    @msg-padding: 20px;
+    display: none;
+    font-size: 1em;
+    color: gray;
+    width: 320px - 2*@msg-padding;
+    height: 240px - 2*@msg-padding;
+    padding: @msg-padding;
+    white-space: normal;
+  }
+
   #preview {
     position: relative;
     width: 320px;
@@ -166,6 +177,23 @@ button {
 
   button#hide-booth {
     background: gray;
+  }
+
+  &.state-rg-verify {
+    .msg.msg-verify {
+      display: inline-block;
+    }
+  }
+
+  &.state-rg-verify-fail {
+    .msg.msg-verify-fail {
+      display: inline-block;
+      color: red;
+    }
+
+    button#hide-booth, button#rg-retry {
+      display: inline-block;
+    }
   }
 
   &.state-no-camera {
@@ -272,4 +300,8 @@ footer {
     padding-left: 7px;
     border-left: 1px solid gray;
   }
+}
+
+#rg-verify {
+  display: none;
 }

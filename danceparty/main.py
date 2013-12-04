@@ -213,6 +213,14 @@ def before_request():
 
 @app.route('/')
 def dances_plz():
+    if app.config['RG_VERIFY_ENDPOINT'] and request.scheme == 'https':
+        # rg verfiy only works with http
+        return redirect(url_for(
+            request.endpoint,
+            _scheme='http',
+            _external='true'
+        ))
+
     return render_template('dance.html',
         dances_json=dances_cache,
         config_data={'mode': 'party', 'csrft': csrf_token()},
@@ -267,6 +275,12 @@ def remove_dance(dance_id):
 
 @app.route('/dance', methods=['POST'])
 def upload_dance():
+    if app.config['RG_VERIFY_ENDPOINT']:
+        user_id, user_token = request.form['user_id'], request.form['user_token']
+        check_token = hmac.new(app.config['RG_VERIFY_SECRET'], user_id, hashlib.sha1).hexdigest()
+        if not safe_str_cmp(user_token, check_token):
+            abort(403)
+
     gif = request.files['moves']
     gif_data = gif.read()
     if gif and check_gif(gif_data):
@@ -278,6 +292,8 @@ def upload_dance():
             'ua': request.user_agent.string,
             'status': 'new',
         }
+        if app.config['RG_VERIFY_ENDPOINT']:
+            dance['rg_id'] = user_id
         g.db.save(dance)
         with open(os.path.join(app.config['UPLOAD_FOLDER'], dance_id + '.gif'), 'w') as out:
             out.write(gif_data)

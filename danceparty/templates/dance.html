@@ -35,12 +35,17 @@
   <h1>show me your moves!</h1>
   <div id="preview">
     <img class="gif">
+    {% if config['RG_VERIFY_ENDPOINT'] -%}
+    <div class="msg msg-verify">verifying your redditgifts account...</div>
+    <div class="msg msg-verify-fail"><p>I can't find your <a href="http://redditgifts.com">redditgifts</a> account. :(</p><p>Please ensure that you are logged in and signed up for Secret Santa 2013, and refresh the page.</p></div>
+    {%- endif -%}
   </div>
   <button id="hide-booth">nah.</button>
   <button id="start-camera">start the camera!</button>
   <button id="record">let's dance!</button>
   <button id="redo-gif">redo</button>
   <button id="upload-gif">upload</button>
+  <button id="rg-retry">retry</button>
 </div>
 
 <footer>
@@ -50,7 +55,11 @@
   <a class="contact" href="mailto:hey@showmeyourmov.es">contact</a>
 </footer>
 
-{% if static_urls.get('js') -%}
+{% if config['RG_VERIFY_ENDPOINT'] -%}
+<iframe id="rg-verify" src="{{ config['RG_VERIFY_ENDPOINT'] }}"></iframe>
+{%- endif -%}
+
+{%- if static_urls.get('js') -%}
 <script src="{{ static_urls['js'] }}"></script>
 {%- else -%}
 <script src="/static/lib/jquery-2.0.3.min.js"></script>
