@@ -291,6 +291,8 @@ DanceGrid = Backbone.View.extend({
 
   render: function() {
     this.scaleGrid()
+    // repeat scaling after render to deal with pesky scroll bar space changes
+    _.defer(_.bind(this.scaleGrid, this))
     _.each(this.collections, function(collection) {
       collection.each(this.addDance, this)
     }, this)
@@ -342,6 +344,7 @@ dances = new DanceCollection
 mydances = new MyDanceCollection
 
 $(function() {
+  dances.reset(dances.shuffle())
   mydances.fetch()
 
   var collections = [dances]

@@ -142,7 +142,7 @@ def dance_json(dance):
 
 
 def dances_json(view, limit=100, shuffle=False):
-    rows = g.db.view(view, limit=limit, include_docs=True)
+    rows = g.db.view(view, descending=True, limit=limit, include_docs=True)
     if shuffle:
         rows = random.sample(rows, min(limit, len(rows)))
     return [dance_json(row.doc) for row in rows]
@@ -273,3 +273,7 @@ def upload_dance():
 def uploaded_file(dance_id):
     if app.debug:
         return send_from_directory(app.config['UPLOAD_FOLDER'], dance_id + '.gif')
+
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
