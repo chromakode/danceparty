@@ -60,7 +60,7 @@ def connect_db():
             'review-queue': {
                 'map': "function(doc) { if (doc.status == 'new') { emit(doc.ts, doc) } }"
             },
-            'review-all': {
+            'all': {
                 'map': "function(doc) {  emit(doc.ts, doc) }"
             },
         },
@@ -147,7 +147,7 @@ def dances_plz():
 @require_reviewer
 def review_dances_plz():
     if request.path.endswith('all'):
-        query = 'danceparty/review-all'
+        query = 'danceparty/all'
     else:
         query = 'danceparty/review-queue'
 
