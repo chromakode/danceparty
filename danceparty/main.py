@@ -47,7 +47,7 @@ def update_dances_cache():
 
 @app.before_first_request
 def setup_app():
-    if not app.debug:
+    if not app.debug and app.config['LOG_FILE']:
         file_handler = logging.FileHandler(app.config['LOG_FILE'])
         file_handler.setLevel(logging.WARNING)
         app.logger.addHandler(file_handler)
