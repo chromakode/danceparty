@@ -148,6 +148,7 @@ button {
   }
 
   .msg {
+    position: relative;
     @msg-padding: 20px;
     display: none;
     font-size: 1.15em;
@@ -156,6 +157,7 @@ button {
     height: 240px - 2*@msg-padding;
     padding: @msg-padding;
     white-space: normal;
+    z-index: 20;
 
     .emote {
       white-space: nowrap;
