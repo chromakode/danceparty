@@ -128,7 +128,10 @@ def dance_json(dance):
     data = {}
     data['id'] = dance['_id']
     data['ts'] = dance['ts']
-    data['url'] = '/dance/'  + dance['_id'] + '.gif'
+    data['url'] = '/dance/' + dance['_id'] + '.gif'
+    if app.config['CDN_HOST']:
+        data['url'] = '//' + app.config['CDN_HOST'] + data['url']
+
     if g.is_reviewer:
         data['status'] = dance['status']
     return data
