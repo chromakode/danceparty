@@ -2,11 +2,15 @@
 <html lang="en">
 <head>
 
-<link rel="stylesheet/less" type="text/css" href="/static/dance.less" />
+{% if static_urls.get('css') -%}
+<link rel="stylesheet" type="text/css" href="{{ static_urls['css'] }}">
+{%- else -%}
+<link rel="stylesheet/less" type="text/css" href="/static/dance.less">
 <script>
   less = {env: 'development', poll: 3000}
 </script>
 <script src="/static/lib/less-1.4.2.js"></script>
+{%- endif %}
 
 {%- if config['GA_ID'] -%}
 <script>
@@ -46,12 +50,16 @@
   <a class="contact" href="mailto:hey@showmeyourmov.es">contact</a>
 </footer>
 
+{% if static_urls.get('js') -%}
+<script src="{{ static_urls['js'] }}"></script>
+{%- else -%}
 <script src="/static/lib/jquery-2.0.3.min.js"></script>
 <script src="/static/lib/underscore-1.4.4.js"></script>
 <script src="/static/lib/backbone-1.0.0.js"></script>
 <script src="/static/lib/gif.js"></script>
 <script src="/static/lib/camera.js"></script>
 <script src="/static/danceparty.js"></script>
+{%- endif %}
 <script>
   dances.reset({{ dances_json|tojson }})
   config = {{ config_data|tojson }}

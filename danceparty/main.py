@@ -45,6 +45,9 @@ def update_dances_cache():
         dances_cache = dances_json('danceparty/approved')
 
 
+static_names = {}
+
+
 @app.before_first_request
 def setup_app():
     if not app.debug and app.config['LOG_FILE']:
@@ -57,6 +60,10 @@ def setup_app():
     poller = Thread(target=poll_dances_cache)
     poller.daemon = True
     poller.start()
+
+    if not app.debug:
+        static_names['js'] = os.readlink(os.path.join(app.static_folder, 'danceparty.min.js'))
+        static_names['css'] = os.readlink(os.path.join(app.static_folder, 'danceparty.css'))
 
 
 def create_db():
@@ -124,17 +131,20 @@ def dance_owner_token(dance_id):
     return hmac.new(app.config['SECRET_KEY'], 'owner:' + dance_id).hexdigest()
 
 
-def dance_json(dance):
-    data = {}
-    data['id'] = dance['_id']
-    data['ts'] = dance['ts']
-    data['url'] = '/dance/' + dance['_id'] + '.gif'
-
+def cdnify(path):
     scheme = request.scheme.upper()
     if scheme in ('HTTP', 'HTTPS'):
         cdn_key = 'CDN_%s_HOST' % request.scheme.upper()
         if app.config[cdn_key]:
-            data['url'] = '//' + app.config[cdn_key] + data['url']
+            return '//' + app.config[cdn_key] + path
+    return path
+
+
+def dance_json(dance):
+    data = {}
+    data['id'] = dance['_id']
+    data['ts'] = dance['ts']
+    data['url'] = cdnify('/dance/' + dance['_id'] + '.gif')
 
     if g.is_reviewer:
         data['status'] = dance['status']
@@ -173,6 +183,13 @@ def csrf_token(salt=None):
     if not session.get('csrft'):
         session['csrft'] = binascii.b2a_hex(os.urandom(16))
     return session['csrft']
+
+
+@app.context_processor
+def template_static_urls():
+    return {'static_urls': {
+        key: cdnify('/static/' + name) for key, name in static_names.iteritems()
+    }}
 
 
 @app.before_request
