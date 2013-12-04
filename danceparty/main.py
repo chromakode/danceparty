@@ -129,8 +129,12 @@ def dance_json(dance):
     data['id'] = dance['_id']
     data['ts'] = dance['ts']
     data['url'] = '/dance/' + dance['_id'] + '.gif'
-    if app.config['CDN_HOST']:
-        data['url'] = '//' + app.config['CDN_HOST'] + data['url']
+
+    scheme = request.scheme.upper()
+    if scheme in ('HTTP', 'HTTPS'):
+        cdn_key = 'CDN_%s_HOST' % request.scheme.upper()
+        if app.config[cdn_key]:
+            data['url'] = '//' + app.config[cdn_key] + data['url']
 
     if g.is_reviewer:
         data['status'] = dance['status']
