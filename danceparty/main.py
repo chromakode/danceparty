@@ -7,6 +7,7 @@ import os
 import random
 import time
 import uuid
+from threading import Thread
 from functools import wraps
 
 import bcrypt
@@ -29,6 +30,21 @@ from werkzeug.security import safe_str_cmp
 from danceparty import app
 
 
+def poll_dances_cache():
+    while True:
+        time.sleep(app.config['CACHE_POLL_INTERVAL'])
+        update_dances_cache()
+
+
+dances_cache = None
+def update_dances_cache():
+    global dances_cache
+    with app.app_context():
+        connect_db()
+        g.is_reviewer = False
+        dances_cache = dances_json('danceparty/approved')
+
+
 @app.before_first_request
 def setup_app():
     if not app.debug:
@@ -36,6 +52,11 @@ def setup_app():
         file_handler.setLevel(logging.WARNING)
         app.logger.addHandler(file_handler)
     create_db()
+
+    update_dances_cache()
+    poller = Thread(target=poll_dances_cache)
+    poller.daemon = True
+    poller.start()
 
 
 def create_db():
@@ -169,7 +190,7 @@ def before_request():
 @app.route('/')
 def dances_plz():
     return render_template('dance.html',
-        dances_json=dances_json('danceparty/approved'),
+        dances_json=dances_cache,
         config={'mode': 'party', 'csrft': csrf_token()},
     )
 
