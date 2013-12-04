@@ -1,6 +1,7 @@
 import binascii
 import cStringIO
 import hashlib
+import hmac
 import logging
 import os
 import random
@@ -41,6 +42,10 @@ def check_gif(data):
         return img.format == 'GIF'
     except IOError:
         return False
+
+
+def dance_owner_token(dance_id):
+    return hmac.new(app.config['SECRET_KEY'], 'owner:' + dance_id).hexdigest()
 
 
 def connect_db():
@@ -159,8 +164,11 @@ def review_dances_plz():
 
 @app.route('/dance/<dance_id>', methods=['GET'])
 def get_dance(dance_id):
-    dance = g.db[dance_id]
-    return json.jsonify(dance_json(dance))
+    dance = g.db.get(dance_id)
+    if dance and (dance['status'] != 'removed' or g.is_reviewer):
+        return json.jsonify(dance_json(dance))
+    else:
+        abort(404)
 
 
 @app.route('/dance/<dance_id>', methods=['PUT'])
@@ -168,10 +176,21 @@ def get_dance(dance_id):
 def update_dance(dance_id):
     dance = g.db[dance_id]
     data = request.get_json()
-    if data['status'] in ['new', 'approved', 'rejected']:
+    if data['status'] in ['new', 'approved', 'rejected', 'removed']:
         dance['status'] = data['status']
     g.db.save(dance)
     return json.jsonify(dance_json(dance))
+
+
+@app.route('/dance/<dance_id>', methods=['DELETE'])
+def remove_dance(dance_id):
+    token = request.headers.get('X-Owner-Token')
+    if not token or not safe_str_cmp(token, dance_owner_token(dance_id)):
+        abort(403)
+    dance = g.db[dance_id]
+    dance['status'] = 'removed'
+    g.db.save(dance)
+    return '', 200
 
 
 @app.route('/dance', methods=['POST'])
@@ -190,7 +209,9 @@ def upload_dance():
         g.db.save(dance)
         with open(os.path.join(app.config['UPLOAD_FOLDER'], dance_id + '.gif'), 'w') as out:
             out.write(gif_data)
-        return get_dance(dance_id)
+        json_data = dance_json(dance)
+        json_data['token'] = dance_owner_token(dance_id)
+        return json.jsonify(json_data)
 
 
 @app.route('/dance/<dance_id>.gif')

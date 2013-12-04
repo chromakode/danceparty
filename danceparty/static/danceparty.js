@@ -144,7 +144,7 @@ recorder = {
   },
 
   onUploaded: function(data) {
-    dances.add(data)
+    mydances.create(data)
     this._reset()
     camera.stop()
     booth.hide()
@@ -157,9 +157,60 @@ recorder = {
   }
 }
 
+Dance = Backbone.Model.extend({
+  destroy: function() {
+    if (!this.has('token')) {
+      throw 'cannot destroy dance; must be owner'
+    }
+
+    Backbone.Model.prototype.destroy.call(this, {
+      headers: {
+        'X-Owner-Token': this.get('token')
+      }
+    })
+  }
+})
+
 DanceCollection = Backbone.Collection.extend({
-  model: Backbone.Model.extend({}),
+  model: Dance,
   url: '/dance'
+})
+
+function localSync(method, model, options) {
+  // hackity hack
+  if (method == 'read') {
+    var data
+    try {
+      data = JSON.parse(localStorage[model.url] || 'null')
+    } catch (err) {}
+    if (options && options.success) {
+      options.success(data)
+    }
+  } else {
+    var collection
+    if (model instanceof Backbone.Collection) {
+      collection = model
+    } else if (model instanceof Backbone.Model) {
+      collection = model.collection
+      if (method == 'delete') {
+        collection.remove(model, options)
+      }
+    }
+    localStorage[collection.url] = JSON.stringify(collection.toJSON())
+    if (options && options.success) {
+      options.success()
+    }
+  }
+}
+
+MyDance = Dance.extend({
+  sync: localSync
+})
+
+MyDanceCollection = DanceCollection.extend({
+  url: 'mydances',
+  model: MyDance,
+  sync: localSync
 })
 
 DanceItem = Backbone.View.extend({
@@ -173,8 +224,31 @@ DanceItem = Backbone.View.extend({
   }
 })
 
+MyDanceItem = DanceItem.extend({
+  className: 'dance mine',
+  buttonsTemplate: _.template('<div class="actions"><button class="remove">remove</button></div>'),
+  events: {
+    'click .remove': 'removeDance',
+  },
+
+  render: function() {
+    DanceItem.prototype.render.apply(this)
+    this.$el.append(this.buttonsTemplate())
+    return this
+  },
+
+  removeDance: function() {
+    var serverModel = new Dance(this.model.attributes, {
+      collection: dances
+    })
+    serverModel.destroy()
+    this.model.destroy()
+    this.remove()
+  }
+})
+
 DanceReviewItem = DanceItem.extend({
-  template: _.template('<img class="gif" src="<%- img_url %>"><div class="actions"><button class="approve">splendid!</button><button class="reject">unacceptable</button></div>'),
+  buttonsTemplate: _.template('<div class="actions"><button class="approve">splendid!</button><button class="reject">unacceptable</button></div>'),
   events: {
     'click .approve': 'approve',
     'click .reject': 'reject'
@@ -186,6 +260,7 @@ DanceReviewItem = DanceItem.extend({
 
   render: function() {
     DanceItem.prototype.render.apply(this)
+    this.$el.append(this.buttonsTemplate())
     var danceStatus = this.model.get('status')
     this.$el.attr('data-status', danceStatus)
     return this
@@ -203,20 +278,42 @@ DanceReviewItem = DanceItem.extend({
 DanceGrid = Backbone.View.extend({
   gridCSSTemplate: _.template('#dances .dance { width:<%- width %>px; height:<%- height %>px; }'),
 
-  initialize: function() {
+  initialize: function(options) {
     $(window).on('resize', _.bind(this.scaleGrid, this))
-    this.listenTo(this.collection, 'add', this.addDance)
+    this.collections = options.collections
+    _.each(this.collections, function(collection) {
+      this.listenTo(collection, 'add', this.addDance)
+    }, this)
   },
 
   render: function() {
     this.scaleGrid()
-    this.collection.each(this.addDance, this)
+    _.each(this.collections, function(collection) {
+      collection.each(this.addDance, this)
+    }, this)
   },
 
   addDance: function(dance) {
-      var viewType = config.mode == 'review' ? DanceReviewItem : DanceItem
+      var viewType
+      if (dance instanceof MyDance) {
+        viewType = MyDanceItem
+      } else if (config.mode == 'review') {
+        viewType = DanceReviewItem
+      } else {
+        viewType = DanceItem
+      }
       var view = new viewType({model: dance})
-      this.$el.append(view.render().$el)
+      var op
+      if (dance instanceof MyDance) {
+        op = 'prepend'
+      } else {
+        op = 'append'
+        if (mydances.get(dance.id)) {
+          // don't duplicate locally-sourced own dances
+          return
+        }
+      }
+      this.$el[op](view.render().$el)
   },
 
   scaleGrid: function() {
@@ -239,16 +336,21 @@ Backbone.ajax = function(request) {
 }
 
 dances = new DanceCollection
+mydances = new MyDanceCollection
 
 $(function() {
+  mydances.fetch()
+
+  var collections = [dances]
   if (config.mode == 'party') {
     booth.init()
     booth.show()
     booth.setState('no-camera')
+    collections.push(mydances)
   }
 
   grid = new DanceGrid({
     el: $('#dances'),
-    collection: dances
+    collections: collections
   }).render()
 })

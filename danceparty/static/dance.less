@@ -80,6 +80,11 @@ button {
       }
     }
 
+    &.mine .actions button.remove {
+      background: fade(gray, 50%);
+      top: auto;
+    }
+
     &[data-status]:not([data-status=new]) {
       img {
         opacity: .75;
@@ -94,7 +99,7 @@ button {
       background: green;
     }
 
-    &[data-status=deleted] {
+    &[data-status=removed] {
       background: yellow;
     }
   }
