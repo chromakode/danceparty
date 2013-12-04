@@ -342,6 +342,7 @@ dances = new DanceCollection
 mydances = new MyDanceCollection
 
 $(function() {
+  dances.reset(dances.shuffle())
   mydances.fetch()
 
   var collections = [dances]
