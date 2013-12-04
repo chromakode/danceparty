@@ -57,7 +57,7 @@
   <a class="contact" href="mailto:hey@showmeyourmov.es">contact</a>
 </footer>
 
-{% if config['RG_VERIFY_ENDPOINT'] -%}
+{% if config['RG_VERIFY_ENDPOINT'] and config_data['mode'] == 'party' -%}
 <iframe id="rg-verify" src="{{ config['RG_VERIFY_ENDPOINT'] }}"></iframe>
 {%- endif -%}
 
