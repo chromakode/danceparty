@@ -187,9 +187,9 @@ def csrf_token(salt=None):
 
 @app.context_processor
 def template_static_urls():
-    return {'static_urls': {
-        key: cdnify('/static/' + name) for key, name in static_names.iteritems()
-    }}
+    urls = {key: cdnify('/static/' + name) for key, name in static_names.iteritems()}
+    urls['icon'] = cdnify('/favicon.ico')
+    return {'static_urls': urls}
 
 
 @app.before_request
