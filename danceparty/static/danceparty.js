@@ -230,12 +230,14 @@ MyDanceCollection = DanceCollection.extend({
 
 DanceItem = Backbone.View.extend({
   className: 'dance',
-  template: _.template('<img class="gif" src="<%- img_url %>">'),
+  template: _.template('<img class="gif">'),
   render: function() {
-    this.$el.html(this.template({
-      img_url: this.model.get('url')
-    }))
+    this.$el.html(this.template())
     return this
+  },
+
+  loadImage: function() {
+    this.$('.gif').attr('src', this.model.get('url'))
   }
 })
 
@@ -299,15 +301,15 @@ DanceGrid = Backbone.View.extend({
     _.each(this.collections, function(collection) {
       this.listenTo(collection, 'add', this.addDance)
     }, this)
+    this.lazyViews = []
   },
 
   render: function() {
-    this.scaleGrid()
-    // repeat scaling after render to deal with pesky scroll bar space changes
-    _.defer(_.bind(this.scaleGrid, this))
     _.each(this.collections, function(collection) {
       collection.each(this.addDance, this)
     }, this)
+    this.scaleGrid()
+    return this
   },
 
   addDance: function(dance) {
@@ -331,6 +333,7 @@ DanceGrid = Backbone.View.extend({
         }
       }
       this.$el[op](view.render().$el)
+      this.lazyViews.push(view)
   },
 
   scaleGrid: function() {
@@ -341,6 +344,15 @@ DanceGrid = Backbone.View.extend({
       width: Math.floor(width),
       height: Math.floor(width * (240 / 320))
     }))
+
+    this.lazyViews = _.reject(this.lazyViews, function(view) {
+      var offset = view.$el.offset()
+      var winHeight = $(window).height()
+      if (offset.top < winHeight) {
+        view.loadImage()
+        return true
+      }
+    })
   }
 })
 
