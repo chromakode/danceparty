@@ -10,7 +10,7 @@ booth = {
       this.hide()
     }, this))
 
-    $('#rg-retry').on('click', function() {
+    $('#retry').on('click', function() {
       location.reload()
     })
 
@@ -82,9 +82,13 @@ recorder = {
     booth.setState('camera-ready')
   },
 
-  onCameraError: function() {},
+  onCameraError: function() {
+    booth.setState('camera-fail')
+  },
 
-  onCameraNotSupported: function() {},
+  onCameraNotSupported: function() {
+    booth.setState('camera-fail')
+  },
 
   record: function() {
     booth.setState('recording', 0)

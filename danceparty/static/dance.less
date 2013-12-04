@@ -191,7 +191,17 @@ button {
       color: red;
     }
 
-    button#hide-booth, button#rg-retry {
+    button#hide-booth, button#retry {
+      display: inline-block;
+    }
+  }
+
+  &.state-camera-fail {
+    .msg.msg-camera-fail {
+      display: inline-block;
+    }
+
+    button#hide-booth, button#retry {
       display: inline-block;
     }
   }
