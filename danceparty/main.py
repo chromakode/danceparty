@@ -1,6 +1,7 @@
 import binascii
 import cStringIO
 import hashlib
+import hmac
 import logging
 import os
 import random
@@ -19,7 +20,7 @@ from flask import (
     redirect,
     request,
     Response,
-    render_template, render_template_string,
+    render_template,
     session,
     send_from_directory,
     url_for,
@@ -29,14 +30,19 @@ from werkzeug.security import safe_str_cmp
 from danceparty import app
 
 
-def poll_cache():
+def poll_dances_cache():
     while True:
-        time.sleep(app.config['POLL_INTERVAL'])
+        time.sleep(app.config['CACHE_POLL_INTERVAL'])
         update_dances_cache()
 
 
 dances_cache = None
-poller = Thread(target=poll_cache)
+def update_dances_cache():
+    global dances_cache
+    with app.app_context():
+        connect_db()
+        g.is_reviewer = False
+        dances_cache = dances_json('danceparty/approved')
 
 
 @app.before_first_request
@@ -46,15 +52,12 @@ def setup_app():
         file_handler.setLevel(logging.WARNING)
         app.logger.addHandler(file_handler)
     create_db()
-    update_dances_cache() #Make sure it is defined before any requests occur.
-    poller.daemon=True
+
+    update_dances_cache()
+    poller = Thread(target=poll_dances_cache)
+    poller.daemon = True
     poller.start()
 
-def update_dances_cache():
-    global dances_cache
-    with app.app_context():
-        connect_db()
-        dances_cache = dances_json('danceparty/approved')
 
 def create_db():
     couch = couchdb.client.Server()
@@ -91,33 +94,44 @@ def connect_db():
 
 def check_gif(data):
     img_stream = cStringIO.StringIO(data)
-    # Confirm it is a GIF first.
+
     try:
         img = Image.open(img_stream)
-        if img.format !='GIF':
+        if img.format != 'GIF':
             return False
     except IOError:
         return False
-    #Loop through its frames adding up delays untill we run out of frames or exceed 1 second.
-    #Note that PIL uses seek and tell for frames. I have no idea why.
-    #It would be nice to iterate over them, but it seems there is just an exception at the end.
+
+    # Loop through frames adding up delays until we run out of frames or exceed
+    # 1 second.
     duration = img.info['duration']
     try:
-        #Go through frames summing the durations untill we run out of ms in the second limit. (or, an extra frame)
-        while duration <= 1050:
-            img.seek(img.tell()+1)
+        # Go through frames summing the durations until we run out of ms in the
+        # second limit. (or, an extra frame)
+        while duration <= 1000:
+            img.seek(img.tell() + 1)
             duration += img.info['duration']
-        #If we leave the while loop without an error, we exceeded the time bound.
+
+        # If we leave the while loop without an error, we exceeded the time bound.
         return False
-    #We reached the last frame without exceeding the while loops ms time bound.
+
+    # We reached the last frame without exceeding the while loops ms time bound.
     except EOFError:
         return True
+
+
+def dance_owner_token(dance_id):
+    return hmac.new(app.config['SECRET_KEY'], 'owner:' + dance_id).hexdigest()
+
 
 def dance_json(dance):
     data = {}
     data['id'] = dance['_id']
     data['ts'] = dance['ts']
-    data['url'] = '/dance/'  + dance['_id'] + '.gif'
+    data['url'] = '/dance/' + dance['_id'] + '.gif'
+    if app.config['CDN_HOST']:
+        data['url'] = '//' + app.config['CDN_HOST'] + data['url']
+
     if g.is_reviewer:
         data['status'] = dance['status']
     return data
@@ -201,8 +215,11 @@ def review_dances_plz():
 
 @app.route('/dance/<dance_id>', methods=['GET'])
 def get_dance(dance_id):
-    dance = g.db[dance_id]
-    return json.jsonify(dance_json(dance))
+    dance = g.db.get(dance_id)
+    if dance and (dance['status'] != 'removed' or g.is_reviewer):
+        return json.jsonify(dance_json(dance))
+    else:
+        abort(404)
 
 
 @app.route('/dance/<dance_id>', methods=['PUT'])
@@ -210,10 +227,21 @@ def get_dance(dance_id):
 def update_dance(dance_id):
     dance = g.db[dance_id]
     data = request.get_json()
-    if data['status'] in ['new', 'approved', 'rejected']:
+    if data['status'] in ['new', 'approved', 'rejected', 'removed']:
         dance['status'] = data['status']
     g.db.save(dance)
     return json.jsonify(dance_json(dance))
+
+
+@app.route('/dance/<dance_id>', methods=['DELETE'])
+def remove_dance(dance_id):
+    token = request.headers.get('X-Owner-Token')
+    if not token or not safe_str_cmp(token, dance_owner_token(dance_id)):
+        abort(403)
+    dance = g.db[dance_id]
+    dance['status'] = 'removed'
+    g.db.save(dance)
+    return '', 200
 
 
 @app.route('/dance', methods=['POST'])
@@ -232,7 +260,9 @@ def upload_dance():
         g.db.save(dance)
         with open(os.path.join(app.config['UPLOAD_FOLDER'], dance_id + '.gif'), 'w') as out:
             out.write(gif_data)
-        return get_dance(dance_id)
+        json_data = dance_json(dance)
+        json_data['token'] = dance_owner_token(dance_id)
+        return json.jsonify(json_data)
 
 
 @app.route('/dance/<dance_id>.gif')
