@@ -385,11 +385,12 @@ dances = new DanceCollection
 mydances = new MyDanceCollection
 
 $(function() {
-  dances.reset(dances.shuffle())
   mydances.fetch()
 
   var collections = [dances]
   if (config.mode == 'party') {
+    dances.reset(dances.shuffle())
+
     $('body').addClass('party')
     booth.init()
     booth.show()
