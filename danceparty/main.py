@@ -27,12 +27,44 @@ from werkzeug.security import safe_str_cmp
 
 from danceparty import app
 
+@app.before_first_request
+def setup_app():
+    if not app.debug:
+        file_handler = logging.FileHandler(app.config['LOG_FILE'])
+        file_handler.setLevel(logging.WARNING)
+        app.logger.addHandler(file_handler)
+    create_db()
 
-if not app.debug:
-    file_handler = logging.FileHandler(app.config['LOG_FILE'])
-    file_handler.setLevel(logging.WARNING)
-    app.logger.addHandler(file_handler)
+def create_db():
+    couch = couchdb.client.Server()
+    db_name = app.config['DB_NAME']
+    if not db_name in couch:
+        couch.create(db_name)
+    db = couch[db_name]
 
+    views = {
+        '_id': '_design/' + db_name,
+        'language': 'javascript',
+        'views': {
+            'approved': {
+                'map': "function(doc) { if (doc.status == 'approved') { emit(doc.ts, doc) } }"
+            },
+            'review-queue': {
+                'map': "function(doc) { if (doc.status == 'new') { emit(doc.ts, doc) } }"
+            },
+            'all': {
+                'map': "function(doc) {  emit(doc.ts, doc) }"
+            },
+        },
+    }
+    doc = db.get(views['_id'], {})
+    if doc.get('views') != views['views']:
+        doc.update(views)
+        db.save(doc)
+
+def connect_db():
+    couch = couchdb.client.Server()
+    g.db = couch[app.config['DB_NAME']]
 
 def check_gif(data):
     img_stream = cStringIO.StringIO(data)
@@ -57,34 +89,6 @@ def check_gif(data):
     #We reached the last frame without exceeding the while loops ms time bound.
     except EOFError:
         return True
-
-def connect_db():
-    g.couch = couchdb.client.Server()
-    db_name = app.config['DB_NAME']
-    if not db_name in g.couch:
-        g.couch.create(db_name)
-    g.db = g.couch[db_name]
-
-    views = {
-        '_id': '_design/' + db_name,
-        'language': 'javascript',
-        'views': {
-            'approved': {
-                'map': "function(doc) { if (doc.status == 'approved') { emit(doc.ts, doc) } }"
-            },
-            'review-queue': {
-                'map': "function(doc) { if (doc.status == 'new') { emit(doc.ts, doc) } }"
-            },
-            'all': {
-                'map': "function(doc) {  emit(doc.ts, doc) }"
-            },
-        },
-    }
-    doc = g.db.get(views['_id'], {})
-    if doc.get('views') != views['views']:
-        doc.update(views)
-        g.db.save(doc)
-
 
 def dance_json(dance):
     data = {}
@@ -132,7 +136,7 @@ def csrf_token(salt=None):
 
 @app.before_request
 def before_request():
-    g.couch = connect_db()
+    connect_db()
 
     if request.method not in ['GET', 'HEAD', 'OPTIONS']:
         if (not request.headers.get('X-CSRFT') or
