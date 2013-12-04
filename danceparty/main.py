@@ -79,7 +79,11 @@ def create_db():
             'all': {
                 'map': "function(doc) {  emit(doc.ts, doc) }"
             },
-        },
+            'upload_rate': {
+                'map': "function(doc) { emit(doc.ip, [doc.ts]) }",
+                'reduce': "function (key, values, rereduce) { return [].concat.apply([], values).sort().reverse().slice(0,%d); }"%app.config['UPLOAD_RATE_COUNT']
+            },
+        }
     }
     doc = db.get(views['_id'], {})
     if doc.get('views') != views['views']:
@@ -250,6 +254,12 @@ def remove_dance(dance_id):
 
 @app.route('/dance', methods=['POST'])
 def upload_dance():
+    recent = g.db.view('danceparty/upload_rate',group=True, group_level=1, stale='update_after', key=request.remote_addr)
+    if recent:
+        now = time.time()
+        if app.config['UPLOAD_RATE_COUNT'] <= \
+                len(filter(lambda t: t>(now - app.config['UPLOAD_RATE_PERIOD']), recent.rows[0].value)):
+            abort(403)
     gif = request.files['moves']
     gif_data = gif.read()
     if gif and check_gif(gif_data):
