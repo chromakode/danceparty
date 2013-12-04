@@ -1,5 +1,8 @@
 DEBUG = False
+LOG_FILE = None
 MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # MB
 DB_NAME = "danceparty"
-CDN_HOST = None
+CDN_HTTP_HOST = None
+CDN_HTTPS_HOST = None
 CACHE_POLL_INTERVAL = 30
+GA_ID = None
