@@ -142,7 +142,7 @@ def dance_json(dance):
 
 
 def dances_json(view, limit=100, shuffle=False):
-    rows = g.db.view(view, limit=limit, include_docs=True)
+    rows = g.db.view(view, descending=True, limit=limit, include_docs=True)
     if shuffle:
         rows = random.sample(rows, min(limit, len(rows)))
     return [dance_json(row.doc) for row in rows]
