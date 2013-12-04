@@ -57,7 +57,6 @@ booth = {
     this.$preview.find('.gif').prop('src', preview)
   }
 }
-// todo: confirm before uploading
 
 recorder = {
   duration: 1,
