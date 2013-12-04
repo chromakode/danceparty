@@ -6,6 +6,7 @@ import os
 import random
 import time
 import uuid
+from threading import Thread
 from functools import wraps
 
 import bcrypt
@@ -18,7 +19,7 @@ from flask import (
     redirect,
     request,
     Response,
-    render_template,
+    render_template, render_template_string,
     session,
     send_from_directory,
     url_for,
@@ -27,6 +28,17 @@ from werkzeug.security import safe_str_cmp
 
 from danceparty import app
 
+
+def poll_cache():
+    while True:
+        time.sleep(app.config['POLL_INTERVAL'])
+        update_dances_cache()
+
+
+dances_cache = None
+poller = Thread(target=poll_cache)
+
+
 @app.before_first_request
 def setup_app():
     if not app.debug:
@@ -34,6 +46,15 @@ def setup_app():
         file_handler.setLevel(logging.WARNING)
         app.logger.addHandler(file_handler)
     create_db()
+    update_dances_cache() #Make sure it is defined before any requests occur.
+    poller.daemon=True
+    poller.start()
+
+def update_dances_cache():
+    global dances_cache
+    with app.app_context():
+        connect_db()
+        dances_cache = dances_json('danceparty/approved')
 
 def create_db():
     couch = couchdb.client.Server()
@@ -62,9 +83,11 @@ def create_db():
         doc.update(views)
         db.save(doc)
 
+
 def connect_db():
     couch = couchdb.client.Server()
     g.db = couch[app.config['DB_NAME']]
+
 
 def check_gif(data):
     img_stream = cStringIO.StringIO(data)
@@ -156,7 +179,7 @@ def before_request():
 @app.route('/')
 def dances_plz():
     return render_template('dance.html',
-        dances_json=dances_json('danceparty/approved'),
+        dances_json=dances_cache,
         config={'mode': 'party', 'csrft': csrf_token()},
     )
 
