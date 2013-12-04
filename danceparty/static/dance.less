@@ -146,12 +146,16 @@ button {
   .msg {
     @msg-padding: 20px;
     display: none;
-    font-size: 1em;
+    font-size: 1.15em;
     color: gray;
     width: 320px - 2*@msg-padding;
     height: 240px - 2*@msg-padding;
     padding: @msg-padding;
     white-space: normal;
+
+    .emote {
+      white-space: nowrap;
+    }
   }
 
   #preview {
