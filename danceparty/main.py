@@ -108,7 +108,7 @@ def check_gif(data):
     try:
         # Go through frames summing the durations until we run out of ms in the
         # second limit. (or, an extra frame)
-        while duration <= 1050:
+        while duration <= 1000:
             img.seek(img.tell() + 1)
             duration += img.info['duration']
 

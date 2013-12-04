@@ -101,7 +101,7 @@ recorder = {
     if (this.gif) {
       var curFrame = this.gif.frames.length
       var endFrame = this.duration * this.fps
-      if (curFrame > endFrame) {
+      if (curFrame >= endFrame) {
         booth.setState('processing')
         this.gif.render()
         camera.pause()
