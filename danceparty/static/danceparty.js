@@ -84,10 +84,12 @@ recorder = {
 
   onCameraError: function() {
     booth.setState('camera-fail')
+    window.ga && ga('send', 'event', 'recorder', 'error');
   },
 
   onCameraNotSupported: function() {
     booth.setState('camera-fail')
+    window.ga && ga('send', 'event', 'recorder', 'not-supported');
   },
 
   record: function() {
