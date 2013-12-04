@@ -240,3 +240,36 @@ button {
     }
   }
 }
+
+footer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  background: white;
+  font-size: 10px;
+  padding: 5px 8px;
+  border-top-left-radius: 8px;
+  opacity: .85;
+
+  & > * {
+    float: left;
+  }
+
+  .heart {
+    color: darken(red, 20%);
+    font-weight: bold;
+    margin-right: 4px;
+  }
+
+  a {
+    color: darken(orange, 20%);
+    font-weight: bold;
+    text-decoration: none;
+  }
+
+  .code, .contact {
+    margin-left: 7px;
+    padding-left: 7px;
+    border-left: 1px solid gray;
+  }
+}
