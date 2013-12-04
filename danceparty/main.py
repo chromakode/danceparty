@@ -39,7 +39,7 @@ def poll_dances_cache():
 dances_cache = None
 def update_dances_cache():
     global dances_cache
-    with app.app_context():
+    with app.test_request_context('/'):
         connect_db()
         g.is_reviewer = False
         dances_cache = dances_json('danceparty/approved')
