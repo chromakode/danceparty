@@ -273,3 +273,7 @@ def upload_dance():
 def uploaded_file(dance_id):
     if app.debug:
         return send_from_directory(app.config['UPLOAD_FOLDER'], dance_id + '.gif')
+
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
