@@ -198,7 +198,7 @@ def before_request():
 def dances_plz():
     return render_template('dance.html',
         dances_json=dances_cache,
-        config={'mode': 'party', 'csrft': csrf_token()},
+        config_data={'mode': 'party', 'csrft': csrf_token()},
     )
 
 
@@ -213,7 +213,7 @@ def review_dances_plz():
 
     return render_template('dance.html',
         dances_json=dances_json(query),
-        config={'mode': 'review', 'csrft': csrf_token()},
+        config_data={'mode': 'review', 'csrft': csrf_token()},
     )
 
 

@@ -5,3 +5,4 @@ DB_NAME = "danceparty"
 CDN_HTTP_HOST = None
 CDN_HTTPS_HOST = None
 CACHE_POLL_INTERVAL = 30
+GA_ID = None

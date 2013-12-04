@@ -72,6 +72,7 @@ recorder = {
       onError: $.proxy(this, 'onCameraError'),
       onNotSupported: $.proxy(this, 'onCameraNotSupported'),
     })
+    window.ga && ga('send', 'event', 'recorder', 'init');
   },
 
   onCameraSuccess: function() {
@@ -137,6 +138,7 @@ recorder = {
         processData: false,
         success: $.proxy(this, 'onUploaded')
     })
+    window.ga && ga('send', 'event', 'recorder', 'upload');
   },
 
   _reset: function() {
@@ -154,6 +156,7 @@ recorder = {
     this._reset()
     camera.start()
     booth.setState('camera-ready')
+    window.ga && ga('send', 'event', 'recorder', 'redo');
   }
 }
 
