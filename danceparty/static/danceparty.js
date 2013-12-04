@@ -365,6 +365,11 @@ $(function() {
     booth.show()
     if ($('#rg-verify').length) {
       booth.setState('rg-verify')
+      setTimeout(function() {
+        if (!window.rg_user_data) {
+          booth.setState('rg-verify-fail')
+        }
+      }, 5000)
     } else {
       booth.setState('no-camera')
     }
