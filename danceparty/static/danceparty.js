@@ -10,8 +10,16 @@ booth = {
       this.hide()
     }, this))
 
+    $('#retry').on('click', function() {
+      location.reload()
+    })
+
     $('#start-camera').on('click', function() {
       recorder.init()
+    })
+
+    $('#mirror-camera input').on('change', function() {
+      recorder.setMirror($(this).is(':checked'))
     })
 
     $('#record').on('click', function() {
@@ -53,7 +61,6 @@ booth = {
     this.$preview.find('.gif').prop('src', preview)
   }
 }
-// todo: confirm before uploading
 
 recorder = {
   duration: 1,
@@ -79,9 +86,19 @@ recorder = {
     booth.setState('camera-ready')
   },
 
-  onCameraError: function() {},
+  onCameraError: function() {
+    booth.setState('camera-fail')
+    window.ga && ga('send', 'event', 'recorder', 'error');
+  },
 
-  onCameraNotSupported: function() {},
+  onCameraNotSupported: function() {
+    booth.setState('camera-fail')
+    window.ga && ga('send', 'event', 'recorder', 'not-supported');
+  },
+
+  setMirror: function(value) {
+    camera.setMirror(value)
+  },
 
   record: function() {
     booth.setState('recording', 0)
@@ -128,6 +145,11 @@ recorder = {
 
     var formData = new FormData()
     formData.append('moves', this.blob)
+
+    if (window.rg_user_data) {
+      formData.append('user_id', rg_user_data.uid)
+      formData.append('user_token', rg_user_data.token)
+    }
 
     Backbone.ajax({
         url: '/dance',
@@ -218,12 +240,18 @@ MyDanceCollection = DanceCollection.extend({
 
 DanceItem = Backbone.View.extend({
   className: 'dance',
-  template: _.template('<img class="gif" src="<%- img_url %>">'),
+  template: _.template('<img class="gif">'),
   render: function() {
-    this.$el.html(this.template({
-      img_url: this.model.get('url')
-    }))
+    this.$el.html(this.template())
+    if (this.loaded) {
+      this.$('.gif').attr('src', this.model.get('url'))
+    }
     return this
+  },
+
+  loadImage: function() {
+    this.loaded = true
+    this.render()
   }
 })
 
@@ -282,20 +310,29 @@ DanceGrid = Backbone.View.extend({
   gridCSSTemplate: _.template('#dances .dance { width:<%- width %>px; height:<%- height %>px; }'),
 
   initialize: function(options) {
-    $(window).on('resize', _.bind(this.scaleGrid, this))
     this.collections = options.collections
     _.each(this.collections, function(collection) {
       this.listenTo(collection, 'add', this.addDance)
     }, this)
+    this.lazyViews = []
+
+    $(window).on('resize', _.bind(function() {
+      this.scaleGrid()
+      this.loadViews()
+    }, this))
+
+    $(window).on('scroll', _.bind(function() {
+      this.loadViews()
+    }, this))
   },
 
   render: function() {
-    this.scaleGrid()
-    // repeat scaling after render to deal with pesky scroll bar space changes
-    _.defer(_.bind(this.scaleGrid, this))
     _.each(this.collections, function(collection) {
       collection.each(this.addDance, this)
     }, this)
+    this.scaleGrid()
+    this.loadViews()
+    return this
   },
 
   addDance: function(dance) {
@@ -319,6 +356,7 @@ DanceGrid = Backbone.View.extend({
         }
       }
       this.$el[op](view.render().$el)
+      this.lazyViews.push(view)
   },
 
   scaleGrid: function() {
@@ -329,6 +367,17 @@ DanceGrid = Backbone.View.extend({
       width: Math.floor(width),
       height: Math.floor(width * (240 / 320))
     }))
+  },
+
+  loadViews: function() {
+    this.lazyViews = _.reject(this.lazyViews, function(view) {
+      var offset = view.$el.offset()
+      var threshold = $(window).height() + $(window).scrollTop()
+      if (offset.top < threshold) {
+        view.loadImage()
+        return true
+      }
+    })
   }
 })
 
@@ -344,14 +393,26 @@ dances = new DanceCollection
 mydances = new MyDanceCollection
 
 $(function() {
-  dances.reset(dances.shuffle())
   mydances.fetch()
 
   var collections = [dances]
   if (config.mode == 'party') {
+    dances.reset(dances.shuffle())
+
+    $('body').addClass('party')
     booth.init()
     booth.show()
-    booth.setState('no-camera')
+    if ($('#rg-verify').length) {
+      booth.setState('rg-verify')
+      setTimeout(function() {
+        if (!window.rg_user_data) {
+          booth.setState('rg-verify-fail')
+          window.ga && ga('send', 'event', 'rg', 'timeout');
+        }
+      }, 5000)
+    } else {
+      booth.setState('no-camera')
+    }
     collections.push(mydances)
   }
 
@@ -359,4 +420,21 @@ $(function() {
     el: $('#dances'),
     collections: collections
   }).render()
+})
+
+$(window).on('message', function(ev) {
+    ev = ev.originalEvent
+    var msg = ev.data.split(':')
+    var name = msg.shift()
+    var data = JSON.parse(msg.join(':'))
+    if (name == 'rg_verify') {
+      rg_user_data = data
+      if (rg_user_data.uid == false) {
+        booth.setState('rg-verify-fail')
+        window.ga && ga('send', 'event', 'rg', 'fail');
+      } else {
+        booth.setState('no-camera')
+        window.ga && ga('send', 'event', 'rg', 'success');
+      }
+    }
 })

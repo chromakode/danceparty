@@ -5,13 +5,14 @@
 	Author: Andrei Gheorghe (http://idevelop.github.com)
 	License: MIT
 
-	chromakode: added media stream stopping
+	chromakode: added media stream stopping and flipping
 */
 
 var camera = (function() {
 	var options;
 	var video, canvas, context, stream;
 	var renderTimer;
+	var mirrored = false;
 
 	function initVideoStream() {
 		video = document.createElement("video");
@@ -41,6 +42,14 @@ var camera = (function() {
 		}
 	}
 
+	function setMirror(value) {
+		if (value != mirrored) {
+			context.translate(canvas.width, 0);
+			context.scale(-1, 1);
+			mirrored = value
+		}
+	}
+
 	function initCanvas() {
 		canvas = options.targetCanvas || document.createElement("canvas");
 		canvas.setAttribute('width', options.width);
@@ -49,10 +58,7 @@ var camera = (function() {
 		context = canvas.getContext('2d');
 
 		// mirror video
-		if (options.mirror) {
-			context.translate(canvas.width, 0);
-			context.scale(-1, 1);
-		}
+		setMirror(options.mirror)
 
 		startCapture();
 	}
@@ -111,6 +117,8 @@ var camera = (function() {
 
 		pause: pauseCapture,
 
-		stop: stopCapture
+		stop: stopCapture,
+
+		setMirror: setMirror
 	};
 })();

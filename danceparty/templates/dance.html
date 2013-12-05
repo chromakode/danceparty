@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
 
-<link rel="stylesheet/less" type="text/css" href="/static/dance.less" />
+<meta name="viewport" content="width=device-width, user-scalable=no">
+<link rel="shortcut icon" href="{{ static_urls['icon'] }}" type="image/x-icon">
+{% if static_urls.get('css') -%}
+<link rel="stylesheet" type="text/css" href="{{ static_urls['css'] }}">
+{%- else -%}
+<link rel="stylesheet/less" type="text/css" href="/static/dance.less">
 <script>
   less = {env: 'development', poll: 3000}
 </script>
 <script src="/static/lib/less-1.4.2.js"></script>
+{%- endif %}
 
 {%- if config['GA_ID'] -%}
 <script>
@@ -31,12 +37,19 @@
   <h1>show me your moves!</h1>
   <div id="preview">
     <img class="gif">
+    <label id="mirror-camera"><input type="checkbox" checked>mirror</label>
+    {% if config['RG_VERIFY_ENDPOINT'] -%}
+    <div class="msg msg-verify">verifying your redditgifts account...</div>
+    <div class="msg msg-verify-fail"><p>I can't find your <a href="http://redditgifts.com">redditgifts</a> account. <span class="emote">:(</span></p><p>Please ensure that you are logged in and signed up for Secret Santa 2013, and refresh the page.</p></div>
+    {%- endif -%}
+    <div class="msg msg-camera-fail">I can't seem to find a camera, sorry. <span class="emote">:(</span></div>
   </div>
   <button id="hide-booth">nah.</button>
   <button id="start-camera">start the camera!</button>
   <button id="record">let's dance!</button>
   <button id="redo-gif">redo</button>
-  <button id="upload-gif">upload</button>
+  <button id="upload-gif">share publicly</button>
+  <button id="retry">retry</button>
 </div>
 
 <footer>
@@ -46,12 +59,20 @@
   <a class="contact" href="mailto:hey@showmeyourmov.es">contact</a>
 </footer>
 
+{% if config['RG_VERIFY_ENDPOINT'] and config_data['mode'] == 'party' -%}
+<iframe id="rg-verify" src="{{ config['RG_VERIFY_ENDPOINT'] }}"></iframe>
+{%- endif -%}
+
+{%- if static_urls.get('js') -%}
+<script src="{{ static_urls['js'] }}"></script>
+{%- else -%}
 <script src="/static/lib/jquery-2.0.3.min.js"></script>
 <script src="/static/lib/underscore-1.4.4.js"></script>
 <script src="/static/lib/backbone-1.0.0.js"></script>
 <script src="/static/lib/gif.js"></script>
 <script src="/static/lib/camera.js"></script>
 <script src="/static/danceparty.js"></script>
+{%- endif %}
 <script>
   dances.reset({{ dances_json|tojson }})
   config = {{ config_data|tojson }}

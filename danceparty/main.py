@@ -45,6 +45,9 @@ def update_dances_cache():
         dances_cache = dances_json('danceparty/approved')
 
 
+static_names = {}
+
+
 @app.before_first_request
 def setup_app():
     if not app.debug and app.config['LOG_FILE']:
@@ -57,6 +60,10 @@ def setup_app():
     poller = Thread(target=poll_dances_cache)
     poller.daemon = True
     poller.start()
+
+    if not app.debug:
+        static_names['js'] = os.readlink(os.path.join(app.static_folder, 'danceparty.min.js'))
+        static_names['css'] = os.readlink(os.path.join(app.static_folder, 'danceparty.css'))
 
 
 def create_db():
@@ -128,17 +135,20 @@ def dance_owner_token(dance_id):
     return hmac.new(app.config['SECRET_KEY'], 'owner:' + dance_id).hexdigest()
 
 
-def dance_json(dance):
-    data = {}
-    data['id'] = dance['_id']
-    data['ts'] = dance['ts']
-    data['url'] = '/dance/' + dance['_id'] + '.gif'
-
+def cdnify(path):
     scheme = request.scheme.upper()
     if scheme in ('HTTP', 'HTTPS'):
         cdn_key = 'CDN_%s_HOST' % request.scheme.upper()
         if app.config[cdn_key]:
-            data['url'] = '//' + app.config[cdn_key] + data['url']
+            return '//' + app.config[cdn_key] + path
+    return path
+
+
+def dance_json(dance):
+    data = {}
+    data['id'] = dance['_id']
+    data['ts'] = dance['ts']
+    data['url'] = cdnify('/dance/' + dance['_id'] + '.gif')
 
     if g.is_reviewer:
         data['status'] = dance['status']
@@ -179,6 +189,13 @@ def csrf_token(salt=None):
     return session['csrft']
 
 
+@app.context_processor
+def template_static_urls():
+    urls = {key: cdnify('/static/' + name) for key, name in static_names.iteritems()}
+    urls['icon'] = cdnify('/favicon.ico')
+    return {'static_urls': urls}
+
+
 @app.before_request
 def before_request():
     connect_db()
@@ -200,6 +217,14 @@ def before_request():
 
 @app.route('/')
 def dances_plz():
+    if app.config['RG_VERIFY_ENDPOINT'] and request.scheme == 'https':
+        # rg verfiy only works with http
+        return redirect(url_for(
+            request.endpoint,
+            _scheme='http',
+            _external='true'
+        ))
+
     return render_template('dance.html',
         dances_json=dances_cache,
         config_data={'mode': 'party', 'csrft': csrf_token()},
@@ -260,6 +285,12 @@ def upload_dance():
         if app.config['UPLOAD_RATE_COUNT'] <= \
                 len(filter(lambda t: t>(now - app.config['UPLOAD_RATE_PERIOD']), recent.rows[0].value)):
             abort(403)
+    if app.config['RG_VERIFY_ENDPOINT']:
+        user_id, user_token = request.form['user_id'], request.form['user_token']
+        check_token = hmac.new(app.config['RG_VERIFY_SECRET'], user_id, hashlib.sha1).hexdigest()
+        if not safe_str_cmp(user_token, check_token):
+            abort(403)
+
     gif = request.files['moves']
     gif_data = gif.read()
     if gif and check_gif(gif_data):
@@ -271,6 +302,8 @@ def upload_dance():
             'ua': request.user_agent.string,
             'status': 'new',
         }
+        if app.config['RG_VERIFY_ENDPOINT']:
+            dance['rg_id'] = user_id
         g.db.save(dance)
         with open(os.path.join(app.config['UPLOAD_FOLDER'], dance_id + '.gif'), 'w') as out:
             out.write(gif_data)
