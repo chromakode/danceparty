@@ -80,8 +80,8 @@ def create_db():
                 'map': "function(doc) {  emit(doc.ts, doc) }"
             },
             'upload_rate': {
-                'map': "function(doc) { emit(doc.ip, [doc.ts]) }",
-                'reduce': "function (key, values, rereduce) { return [].concat.apply([], values).sort().reverse().slice(0,%d); }"%app.config['UPLOAD_RATE_COUNT']
+                'map': "function(doc) { if(doc.status != 'approved') { emit(doc.ip, [doc.ts]) } }",
+                'reduce': "function (key, values, rereduce) { return [].concat.apply([], values).sort().reverse().slice(0,%d); }"%(app.config['UPLOAD_RATE_COUNT']*2) #it is assumed if the majority of the uploads in the bucket are approved that they aren't spammers.
             },
         }
     }
