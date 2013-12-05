@@ -350,7 +350,7 @@ DanceGrid = Backbone.View.extend({
         op = 'prepend'
       } else {
         op = 'append'
-        if (mydances.get(dance.id)) {
+        if (config.mode != 'review' && mydances.get(dance.id)) {
           // don't duplicate locally-sourced own dances
           return
         }
