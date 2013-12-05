@@ -151,6 +151,25 @@ button {
     font-size: 1.4em;
   }
 
+  #mirror-camera {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    font-size: 12px;
+    background: fade(white, 75%);
+    border-radius: 2px;
+    padding: 1px 3px;
+    z-index: 20;
+    opacity: 0;
+    .transition(opacity, 0.25s);
+
+    input {
+      vertical-align: middle;
+      margin: 0;
+      margin-right: 3px;
+    }
+  }
+
   .msg {
     position: relative;
     @msg-padding: 20px;
@@ -241,6 +260,10 @@ button {
     button#record {
       display: inline-block;
       width: auto !important;
+    }
+
+    #mirror-camera {
+      opacity: 1;
     }
   }
 

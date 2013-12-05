@@ -18,6 +18,10 @@ booth = {
       recorder.init()
     })
 
+    $('#mirror-camera input').on('change', function() {
+      recorder.setMirror($(this).is(':checked'))
+    })
+
     $('#record').on('click', function() {
       recorder.record()
     })
@@ -90,6 +94,10 @@ recorder = {
   onCameraNotSupported: function() {
     booth.setState('camera-fail')
     window.ga && ga('send', 'event', 'recorder', 'not-supported');
+  },
+
+  setMirror: function(value) {
+    camera.setMirror(value)
   },
 
   record: function() {
